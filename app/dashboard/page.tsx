@@ -11,7 +11,7 @@ export const dynamic = 'force-dynamic';
 export default function DashboardPage() {
   return (
     <>
-      <Script src="https://cdn.jsdelivr.net/npm/chart.js" strategy="beforeInteractive" />
+      <Script src="https://cdn.jsdelivr.net/npm/chart.js" strategy="afterInteractive" />
 
       <style>{CSS}</style>
 
@@ -206,6 +206,7 @@ const SCRIPT = `
     ).join("");
   }
   function renderCharts(data){
+    if(typeof Chart === 'undefined'){ setTimeout(() => renderCharts(data), 150); return; }
     const sellers = groupBy(data, ["Criado_por"]).slice(0,12);
     const routeOrder = ["Rota 08h","Rota 10h","Rota 14h","Rota 16h"];
     const rg = groupBy(data, ["Janela_Rota"]);
