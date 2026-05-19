@@ -21,11 +21,13 @@ export default function DashboardPage() {
             <h1>CENTRAL FARMA | PAINEL OPERACIONAL</h1>
             <p>Pagamentos por vendedora, janela de rota e ciclo de corte logístico</p>
           </div>
-          <button id="refreshBtn" onclick="window.__painelRefresh && window.__painelRefresh()">
-            <span id="refreshIcon">↻</span> Atualizar
-          </button>
+          <div id="refreshArea">
+            <button id="refreshBtn">
+              <span id="refreshIcon">↻</span> Atualizar
+            </button>
+            <div id="lastUpdated"></div>
+          </div>
         </div>
-        <div id="lastUpdated"></div>
       </header>
 
       <main>
@@ -116,11 +118,12 @@ const CSS = `
 *{box-sizing:border-box}body{margin:0;font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:#1f2933}
 header{background:linear-gradient(135deg,var(--navy),var(--blue));color:white;padding:30px 38px}header h1{margin:0;font-size:29px}header p{margin:8px 0 0;color:#dbeafe}
 #headerTop{display:flex;align-items:center;justify-content:space-between;gap:16px}
-#lastUpdated{margin-top:10px;font-size:12px;color:#93c5fd;min-height:16px}
+#refreshArea{display:flex;flex-direction:column;align-items:flex-end;gap:6px;flex-shrink:0}
+#lastUpdated{font-size:12px;color:#93c5fd;white-space:nowrap;min-height:15px;text-align:right}
 #refreshBtn{display:flex;align-items:center;gap:8px;padding:10px 22px;background:rgba(255,255,255,0.15);color:white;border:1px solid rgba(255,255,255,0.35);border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;white-space:nowrap;transition:background .2s}
 #refreshBtn:hover{background:rgba(255,255,255,0.25)}
 #refreshBtn:disabled{opacity:.55;cursor:not-allowed}
-#refreshIcon{display:inline-block;font-size:16px;transition:transform .5s}
+#refreshIcon{display:inline-block;font-size:16px}
 #refreshIcon.spinning{animation:spin .7s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
 main{padding:26px 36px;max-width:1540px;margin:auto}.filters,.kpis{display:grid;gap:16px;margin-bottom:22px}.filters{grid-template-columns:repeat(5,1fr)}.kpis{grid-template-columns:repeat(6,1fr)}
@@ -275,7 +278,7 @@ const SCRIPT = `
       if(icon) icon.classList.remove("spinning");
     }
   }
-  window.__painelRefresh = loadData;
+  document.getElementById("refreshBtn").addEventListener("click", loadData);
   // Auto-refresh a cada 60s
   loadData();
   setInterval(loadData, 60_000);
