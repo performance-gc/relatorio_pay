@@ -69,12 +69,13 @@ async function fetchFromDirectDb(lookbackDays: number): Promise<RawPaymentRow[]>
 async function fetchFromN8n(lookbackDays: number): Promise<RawPaymentRow[]> {
   const url = must('N8N_WEBHOOK_URL');
   const secret = must('N8N_WEBHOOK_SECRET');
+  const headerName = process.env.N8N_WEBHOOK_HEADER_NAME || 'X-Webhook-Secret';
 
   const res = await fetch(url, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'X-Webhook-Secret': secret,
+      [headerName]: secret,
     },
     body: JSON.stringify({ lookbackDays }),
     cache: 'no-store',
