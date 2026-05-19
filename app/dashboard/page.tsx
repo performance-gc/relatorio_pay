@@ -16,8 +16,16 @@ export default function DashboardPage() {
       <style>{CSS}</style>
 
       <header>
-        <h1>CENTRAL FARMA | PAINEL OPERACIONAL</h1>
-        <p>Pagamentos por vendedora, janela de rota e ciclo de corte logístico</p>
+        <div id="headerTop">
+          <div>
+            <h1>CENTRAL FARMA | PAINEL OPERACIONAL</h1>
+            <p>Pagamentos por vendedora, janela de rota e ciclo de corte logístico</p>
+          </div>
+          <button id="refreshBtn" onclick="window.__painelRefresh && window.__painelRefresh()">
+            <span id="refreshIcon">↻</span> Atualizar
+          </button>
+        </div>
+        <div id="lastUpdated"></div>
       </header>
 
       <main>
@@ -107,6 +115,14 @@ const CSS = `
 :root{--navy:#142d4c;--blue:#1f4e79;--green:#2e8b57;--bg:#f4f6f8;--line:#e5e7eb;--muted:#6b7280;--red:#991b1b}
 *{box-sizing:border-box}body{margin:0;font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:#1f2933}
 header{background:linear-gradient(135deg,var(--navy),var(--blue));color:white;padding:30px 38px}header h1{margin:0;font-size:29px}header p{margin:8px 0 0;color:#dbeafe}
+#headerTop{display:flex;align-items:center;justify-content:space-between;gap:16px}
+#lastUpdated{margin-top:10px;font-size:12px;color:#93c5fd;min-height:16px}
+#refreshBtn{display:flex;align-items:center;gap:8px;padding:10px 22px;background:rgba(255,255,255,0.15);color:white;border:1px solid rgba(255,255,255,0.35);border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;white-space:nowrap;transition:background .2s}
+#refreshBtn:hover{background:rgba(255,255,255,0.25)}
+#refreshBtn:disabled{opacity:.55;cursor:not-allowed}
+#refreshIcon{display:inline-block;font-size:16px;transition:transform .5s}
+#refreshIcon.spinning{animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
 main{padding:26px 36px;max-width:1540px;margin:auto}.filters,.kpis{display:grid;gap:16px;margin-bottom:22px}.filters{grid-template-columns:repeat(5,1fr)}.kpis{grid-template-columns:repeat(6,1fr)}
 .card,.panel,.filter-card{background:white;border:1px solid var(--line);border-radius:18px;box-shadow:0 8px 24px rgba(15,23,42,.06)}.filter-card,.card,.panel{padding:18px}
 label{display:block;font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;margin-bottom:8px}select,input{width:100%;padding:10px;border:1px solid var(--line);border-radius:10px}
@@ -228,23 +244,38 @@ const SCRIPT = `
     const data = getFiltered();
     updateKpis(data); renderTables(data); renderCharts(data);
   }
+  let filtersAttached = false;
   async function loadData(){
-    const status = document.getElementById("statusLine");
+    const status  = document.getElementById("statusLine");
+    const lastUpd = document.getElementById("lastUpdated");
+    const btn     = document.getElementById("refreshBtn");
+    const icon    = document.getElementById("refreshIcon");
+    if(btn) btn.disabled = true;
+    if(icon) icon.classList.add("spinning");
     try {
       status.textContent = "Carregando dados em tempo real…";
       const res = await fetch("/api/payments", { cache: "no-store" });
       if(!res.ok) throw new Error("HTTP " + res.status + ": " + (await res.text()));
       DATA = await res.json();
       populateFilters();
-      ["sellerFilter","routeFilter","typeFilter","statusFilter","searchInput"]
-        .forEach(id => document.getElementById(id).addEventListener("input", refresh));
+      if(!filtersAttached){
+        ["sellerFilter","routeFilter","typeFilter","statusFilter","searchInput"]
+          .forEach(id => document.getElementById(id).addEventListener("input", refresh));
+        filtersAttached = true;
+      }
       refresh();
-      status.textContent = "Atualizado em " + new Date().toLocaleString("pt-BR");
+      const hora = new Date().toLocaleString("pt-BR");
+      status.textContent  = "Atualizado em " + hora;
+      if(lastUpd) lastUpd.textContent = "Última atualização: " + hora + " • Atualiza automaticamente a cada 60s";
     } catch(e) {
       status.textContent = "Erro ao carregar: " + (e && e.message ? e.message : e);
       console.error(e);
+    } finally {
+      if(btn) btn.disabled = false;
+      if(icon) icon.classList.remove("spinning");
     }
   }
+  window.__painelRefresh = loadData;
   // Auto-refresh a cada 60s
   loadData();
   setInterval(loadData, 60_000);
