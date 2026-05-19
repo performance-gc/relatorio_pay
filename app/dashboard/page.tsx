@@ -269,7 +269,7 @@ const SCRIPT = `
       refresh();
       const hora = new Date().toLocaleString("pt-BR");
       status.textContent  = "Atualizado em " + hora;
-      if(lastUpd) lastUpd.textContent = "Última atualização: " + hora + " • Atualiza automaticamente a cada 60s";
+      if(lastUpd) lastUpd.textContent = "Última atualização: " + hora + " • Atualiza automaticamente a cada 10min";
     } catch(e) {
       status.textContent = "Erro ao carregar: " + (e && e.message ? e.message : e);
       console.error(e);
@@ -281,6 +281,6 @@ const SCRIPT = `
   document.getElementById("refreshBtn").addEventListener("click", loadData);
   // Auto-refresh a cada 60s
   loadData();
-  setInterval(loadData, 60_000);
+  setInterval(loadData, 600_000);
 })();
 `;
