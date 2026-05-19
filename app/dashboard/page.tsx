@@ -125,7 +125,7 @@ const SCRIPT = `
 (function(){
   let DATA = {records:[], dataCorte:'--', agoraOperacional:'--'};
   let sellerChart, routeChart;
-  const fmtMoney = v => "R$ " + Math.round(v||0).toLocaleString("pt-BR");
+  const fmtMoney = v => "R$ " + (v||0).toLocaleString("pt-BR", {minimumFractionDigits:2, maximumFractionDigits:2});
   const unique = a => [...new Set(a)].filter(Boolean).sort((x,y) => x.localeCompare(y,"pt-BR"));
 
   function fillSelect(id, vals){
