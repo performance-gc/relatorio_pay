@@ -135,6 +135,9 @@ canvas{max-height:340px!important}table{width:100%;border-collapse:collapse;font
 tr.atrasado{background:#fff1f2}.badge-delay,.badge-ok{padding:5px 10px;border-radius:999px;font-weight:800;font-size:12px}.badge-delay{background:#fee2e2;color:#991b1b}.badge-ok{background:#dcfce7;color:#166534}
 .rule{margin-top:8px;padding:14px;border-radius:14px;background:#fff7ed;color:#7c2d12;border:1px solid #fed7aa;font-size:13px;line-height:1.45}.pill{display:inline-block;padding:4px 8px;border-radius:999px;background:#e8f5ee;color:#216b42;font-weight:700;font-size:12px}
 .footer{display:flex;justify-content:space-between;color:var(--muted);font-size:12px;margin-top:12px}@media(max-width:1100px){.filters,.grid,.tables{grid-template-columns:1fr}.kpis{grid-template-columns:repeat(2,1fr)}}
+#inactivityBanner{display:none;position:fixed;bottom:0;left:0;right:0;background:#1f4e79;color:white;padding:14px 24px;align-items:center;justify-content:center;gap:16px;font-size:14px;z-index:9999;box-shadow:0 -4px 20px rgba(0,0,0,0.25)}
+#inactivityBanner button{padding:8px 18px;background:#2e8b57;color:white;border:none;border-radius:8px;font-weight:700;cursor:pointer;font-size:13px}
+#inactivityBanner button:hover{background:#256f47}
 `;
 
 // ----------------------------------------------------------------------------
@@ -279,8 +282,60 @@ const SCRIPT = `
     }
   }
   document.getElementById("refreshBtn").addEventListener("click", loadData);
-  // Auto-refresh a cada 60s
+  // Auto-refresh a cada 10min
   loadData();
   setInterval(loadData, 600_000);
+
+  // ── Inatividade: desconecta após 30min sem interação ──────────────────────
+  (function(){
+    const TIMEOUT_MS = 30 * 60 * 1000; // 30 min → logout
+    const WARN_MS    = 28 * 60 * 1000; // 28 min → aviso (2min antes)
+
+    // Cria banner fixo no rodapé
+    const banner = document.createElement("div");
+    banner.id = "inactivityBanner";
+    banner.innerHTML =
+      "<span>⚠️ Você será desconectado por inatividade em <b id='inactCountdown'>2:00</b></span>" +
+      "<button id='inactKeepBtn'>Continuar conectado</button>";
+    document.body.appendChild(banner);
+
+    let logoutTimer, warnTimer, countdownInterval;
+
+    function showWarning() {
+      banner.style.display = "flex";
+      let secs = 120;
+      countdownInterval = setInterval(function() {
+        secs--;
+        const el = document.getElementById("inactCountdown");
+        if(el) el.textContent = Math.floor(secs/60) + ":" + String(secs%60).padStart(2,"0");
+        if(secs <= 0) clearInterval(countdownInterval);
+      }, 1000);
+    }
+
+    function hideWarning() {
+      banner.style.display = "none";
+      clearInterval(countdownInterval);
+    }
+
+    async function doLogout() {
+      try { await fetch("/api/auth/signout", { method: "POST" }); } catch(e) {}
+      window.location.href = "/login?reason=inatividade";
+    }
+
+    function resetInactivity() {
+      clearTimeout(logoutTimer);
+      clearTimeout(warnTimer);
+      hideWarning();
+      warnTimer   = setTimeout(showWarning, WARN_MS);
+      logoutTimer = setTimeout(doLogout,    TIMEOUT_MS);
+    }
+
+    document.getElementById("inactKeepBtn").addEventListener("click", resetInactivity);
+    ["mousemove","mousedown","keydown","scroll","touchstart","click"].forEach(function(evt) {
+      document.addEventListener(evt, resetInactivity, { passive: true });
+    });
+
+    resetInactivity(); // inicia os timers
+  })();
 })();
 `;
